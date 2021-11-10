@@ -1,5 +1,6 @@
 package manager.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import manager.commen.utils.CurPool;
 import manager.commen.utils.SessionList;
@@ -10,6 +11,7 @@ import java.util.*;
 
 @CrossOrigin
 @RestController
+@Slf4j
 public class WebsocketMsg {
 
 
@@ -29,7 +31,7 @@ public class WebsocketMsg {
             Integer userID = it.next();
 
             if (userId.equals(userID)){
-                System.out.println(userID+"有");
+               log.info("链接的id有{}", userID);
             }else {
                 String username = (String) CurPool.sessionPool.get(userID).get(0);
                 userlist.add(username);
@@ -57,9 +59,7 @@ public class WebsocketMsg {
     Map connectuser(@RequestParam("username") String username,
                     @RequestParam("UserId") Integer UserId,
                     @RequestParam("ToUserId") Integer ToUserId){
-        System.out.println(username);
-        System.out.println(UserId);
-        System.out.println(ToUserId);
+        log.info("输入的连接用户有{}{}{}",username,UserId,ToUserId);
 
         HashMap map = new HashMap();
 
@@ -69,7 +69,7 @@ public class WebsocketMsg {
             sessionList.setUsername(username);
             sessionList.setUserId(UserId);
             sessionList.setToUserId(ToUserId);
-            System.out.println(username+"自己的池子"+sessionList);
+            log.info("{}自己的池子{}",username,sessionList);
             WebsocketSessionPool.linkSession.put(username , sessionList);
         }
 
@@ -83,11 +83,11 @@ public class WebsocketMsg {
             sessionList.setUsername(usernameTo);
             sessionList.setUserId(ToUserId);
             sessionList.setToUserId(UserId);
-            System.out.println(usernameTo+"连接对象的池子"+sessionList);
+            log.info("{}连接对象的池子{}",usernameTo,sessionList);
             WebsocketSessionPool.linkSession.put(usernameTo,sessionList);
         }else {
             map.put("msg","faile");
-            System.out.println("失败了");
+            log.info("链接失败了");
         }
 
         map.put("msg","sucess");
@@ -105,12 +105,9 @@ public class WebsocketMsg {
     public void disconnect(@RequestParam("username") String username,
                     @RequestParam("UserId") Integer UserId,
                     @RequestParam("ToUserId") Integer ToUserId){
-        System.out.println(username);
-        System.out.println(UserId);
-        System.out.println(ToUserId);
 
         WebsocketSessionPool.linkSession.remove(username);
         WebsocketSessionPool.linkSession.remove(CurPool.sessionPool.get(ToUserId).get(0).toString());
-        System.out.println("成功删除连接");
+        log.info("成功删除连接");
     }
 }

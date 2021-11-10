@@ -1,0 +1,283 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>聊天</title>
+<link rel="stylesheet" href="css/style.css" type="text/css">
+<link rel="stylesheet" href="css/comment.css" type="text/css">
+</head>
+<body>
+
+
+
+<div class="commentAll" style="width: 550px; height: 800px; position: fixed; right: 0px; bottom: 0px" >
+
+    <div style="width: 550px; height: 580px; overflow-y: auto;">
+        <div class="comment-show">
+            <div class="comment-show-con clearfix">
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="sendmsg" style="position: absolute; bottom: 50px; width: 550px; height: 50px"  >
+        <div class="reviewArea clearfix" style="float: left; width: 430px; height: 80px; margin: 0 auto">
+            <textarea class="content comment-input" placeholder="Please enter a comment&hellip;" onkeyup="keyUP(this)" style="width: 400px; float: left;"></textarea>
+        </div>
+        <a href="javascript:;" class="plBtn" style="float: left; margin-top: 10px; margin-left: 30px">发送</a>
+    </div>
+
+<div>
+
+</div>
+    <div class="canuselink">
+        <div class="canuselinkshow">
+            <div class="canusemark">可用连接</div>
+        </div>
+    </div>
+
+    <div class="canlink">
+        <div class="canlinkshow">
+            <div class="canlinkmark">建立的连接</div>
+        </div>
+    </div>
+
+    <input type="button" onclick="check()" value="查询有多少个可用连接">
+    <input type="button" onclick="closews()" value="关闭连接">
+</div>
+
+
+
+
+
+<div class="buttons">
+    <p>用户:<span class="username"></span></p>
+    <div class="in">
+        <input id="texts" />
+        <input id="bts" type="button" value="点击"/>
+    </div>
+
+</div>
+
+<input type="button" onclick="send()" value="ws与服务器建立连接">
+
+
+
+<script type="text/javascript" src="js/jquery-1.12.0.min.js"></script>
+<script type="text/javascript" src="js/jquery.flexText.js"></script>
+<!--textarea高度自适应-->
+<script type="text/javascript">
+    $(function () {
+        $('.content').flexText();
+    });
+</script>
+<!--textarea限制字数-->
+<script type="text/javascript">
+    function keyUP(t){
+        var len = $(t).val().length;
+        if(len > 139){
+            $(t).val($(t).val().substring(0,140));
+        }
+    }
+</script>
+
+<!--点击发送创建消息-->
+<script type="text/javascript">
+
+
+
+    //创建websocke的连接
+    var socketpath = "ws://192.168.10.131:8085/websocket/";
+
+    //登录验证
+    var user = ""
+    $("#bts").bind("click",function(){
+        user =  $("#texts").val()
+        console.log(user)
+        if (user == ""){
+            alert("请输入用户信息")
+        }else {
+            $.ajax({
+                type:"GET",
+                url: "/login",
+                async:true,
+                dataType:"json",
+                data:{
+                    user:user
+                },
+                success:function (result) {
+                    $(".username").html(result.user)
+                    alert(result.msg)
+                    $(".in").hide()
+                }
+            })
+        }
+    });
+
+    var Touser;
+
+
+    //建立连接
+    function send() {
+        var username = $(".username").text();
+        console.log(username);
+
+        if (username == "aa") {
+            var userId = 1;
+        } else {
+            var userId = 2;
+        }
+
+        var path = socketpath + userId + '/' + username;
+
+        websocket = new WebSocket(path);
+
+        $('.commentAll').on('click', '.plBtn', function () {
+            var myDate = new Date();
+            //获取当前年
+            var year = myDate.getFullYear();
+            //获取当前月
+            var month = myDate.getMonth() + 1;
+            //获取当前日
+            var date = myDate.getDate();
+            var h = myDate.getHours();       //获取当前小时数(0-23)
+            var m = myDate.getMinutes();     //获取当前分钟数(0-59)
+            if (m < 10) m = '0' + m;
+            var s = myDate.getSeconds();
+            if (s < 10) s = '0' + s;
+            var now = year + '-' + month + "-" + date + " " + h + ':' + m + ":" + s;
+            //获取输入内容
+            var oSize = $('.flex-text-wrap').find('.comment-input').val();
+            console.log(oSize);
+            //动态创建评论模块
+            oHtml = '<div class="comment-show-con clearfix"><div class="comment-show-con-img pull-left"><img src="images/header-img-comment_03.png" alt=""></div> ' +
+                '<div class="comment-show-con-list pull-left clearfix"><div class="pl-text clearfix"> ' +
+                '<a href="#" class="comment-size-name">' + username + ' </a> <span class="my-pl-con">&nbsp;' + oSize +
+                '</span> </div> <div class="date-dz"> <span class="date-dz-left pull-left comment-time">' + now +
+                '</span> </div><div class="hf-list-con"></div></div> </div>';
+            if (oSize.replace(/(^\s*)|(\s*$)/g, "") != '') {
+                $('.comment-show').append(oHtml);
+                $(this).siblings('.flex-text-wrap').find('.comment-input').prop('value', '').siblings('pre').find('span').text('');
+            }
+            websocket.send(oSize);
+            $('.flex-text-wrap').find('.comment-input').val("")
+        });
+
+
+        websocket.onmessage = function (data) {
+            console.log('接收到来自服务器的消息：');
+            let received_msg = data.data;           // 接收到的数据
+            let obj = JSON.parse(received_msg);
+            console.log(obj)
+
+            var myDate = new Date();
+            //获取当前年
+            var year = myDate.getFullYear();
+            //获取当前月
+            var month = myDate.getMonth() + 1;
+            //获取当前日
+            var date = myDate.getDate();
+            var h = myDate.getHours();       //获取当前小时数(0-23)
+            var m = myDate.getMinutes();     //获取当前分钟数(0-59)
+            if (m < 10) m = '0' + m;
+            var s = myDate.getSeconds();
+            if (s < 10) s = '0' + s;
+            var now = year + '-' + month + "-" + date + " " + h + ':' + m + ":" + s;
+            //获取输入内容
+            oHtml = '<div class="comment-show-con clearfix">' +
+
+                         '<div class="comment-show-con-list pull-left clearfix" style="float:right">' +
+                               '<div class="pl-text clearfix"> ' +
+                                    '<a href="#" class="comment-size-name" style="float: right">' + Touser + ' </a> ' +
+                                    '<p class="my-pl-con" style="text-align:right;">' + obj + '&nbsp;</p> ' +
+                               '</div> ' +
+                               '<div class="date-dz"  style="margin-top: 8px">' +
+                                    '<p  class="my-pl-con" style="text-align:right; margin-left: 2px">' + now + '&nbsp;' + '&nbsp;' + '&nbsp;' + '</p>' +
+                               '</div>' +
+                               '<div class="hf-list-con"></div>' +
+                         '</div> ' +
+                         '<div class="comment-show-con-img pull-left" style="float: right"><img src="images/header-img-comment_03.png" alt=""></div> ' +
+                '</div>';
+                $('.comment-show').append(oHtml);
+        }
+
+        websocket.close = function () {
+            console.log("成功关闭")
+        }
+    }
+
+
+
+    //绑定连接通道
+    function bindchannel(obj) {
+        Touser = obj.innerHTML;
+        var ToUserId = obj.children[0].innerHTML;
+        user = $("#texts").val();
+        if (user == "aa") {
+            var userId = 1;
+        } else {
+            var userId = 2;
+        }
+        $.ajax({
+            type: "GET",
+            url: "/createSession",
+            async: true,
+            dataType: "json",
+            data: {
+                username: user,
+                UserId: userId,
+                ToUserId: ToUserId
+            },
+            success: function (result) {
+                alert("建立连接:"+result.msg);
+                if (result.msg == "sucess"){
+                    console.log("进入")
+                    var p = "<p id='usershows'  >" + Touser +"<span id='userId' style='visibility: hidden;' >" + ToUserId + "</span>" + "</p>" ;
+                    $(".canlinkmark").append(p);
+                    $("#userbts").hide();
+                }else {
+                    alert("连接错误")
+                }
+
+            }
+
+        })
+    }
+
+
+
+
+
+
+
+
+        //展示连接对象
+        function check() {
+            user = $("#texts").val();
+            if (user == "aa") {
+                var userId = 1;
+            } else {
+                var userId = 2;
+            }
+            console.log(user);
+            $.ajax({
+                type: "GET",
+                url: "/checkAll",
+                async: true,
+                dataType: "json",
+                data: {
+                    userId: userId
+                },
+                success: function (result) {
+
+                    console.log(result.userlist)
+                    var p = $("<p id='userbts'  onclick='bindchannel(this)'  >" + result.userlist + "<span id='userId' style='visibility: hidden;' >" + result.userlistid + "</span>" + "</p>")
+                    $(".canusemark").append(p)
+                }
+            })
+        }
+
+</script>
+</body>
+</html>

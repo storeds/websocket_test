@@ -1,0 +1,9 @@
+spring:
+  thymeleaf:
+    servlet:
+      content-type: text/html
+    cache: false
+    prefix: classpath:/
+    suffix: .html
+server:
+  port: 8085
